@@ -7,6 +7,10 @@ jquery.wait allows you to easily insert a delay into a chain of jquery
 methods.  This allows you to use timeouts without uglifying your code and
 without having to use a custom queue.
 
+Now with support for promises! Instead of a timeout, pass a jQuery promise into
+the wait method, and the chain of methods will resume calling when that promise
+is resolved.  If the promise is rejected, the method chain will not complete.
+
 example:
 
     // add a class to element #foo, then remove 5 seconds later
@@ -19,6 +23,12 @@ example:
 
     // with jquery.wait
     $('#foo').addClass('myClass').wait(5000).removeClass('myClass');
+
+    // using a promise
+    var deferred = $.Deferred();
+    $('#foo').addClass('myClass').wait(deferred.promise()).removeClass('myClass');
+
+    deferred.resolve(); // removeClass will be called
 
 jquery.wait will work with any default jquery object methods, as well as any
 methods provided by plugins loaded *before* jquery.wait.

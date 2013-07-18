@@ -1,90 +1,84 @@
 /**
  * jquery.wait - insert simple delays into your jquery method chains
- *
- * jquery.wait allows you to easily insert a delay into a chain of jquery
- * methods.  This allows you to use timeouts without uglifying your code and
- * without having to use a custom queue.
- *
- * example:
- *     // add a class to element #foo, then remove 5 seconds later
- *
- *     // without jquery.wait
- *      $('#foo').addClass('myClass');
- *      window.setTimeout(function(){
- *        $('#foo').removeClass('myClass');
- *      }, 5000);
- *
- *     // with jquery.wait
- *     $('#foo').addClass('myClass').wait(5000).removeClass('myClass');
- *
- * jquery.wait will work with any default jquery object methods, as well as any
- * methods provided by plugins loaded *before* jquery.wait.
- *
- * !important - if you are using jquery.wait to add/remove classes that controll
- * css transitions, the duration of the wait needs to be slightly longer than
- * the transition time. So, if in the example above the class .myClass added a
- * 5 second transition of some sort, i would need to make the wait time longer.
- * I recommend 100ms longer, though your needs may vary depending on the
- * complexity of the animation.
- *
- * If you are chaining jQuery transitions, it is better to use the default
- * jquery .delay method, which has the same syntax but works with jquery queues
- *
  * @author Matthew Lee matt@wahilacreative.com
  */
 
 (function($){
+  // fake jQuery object that allows us to resolve the entire jQuery method
+  // chain, pause, and resume execution later.
   function jQueryDummy($real, delay, _fncQueue){
     var dummy = this;
-    this.fncQueue = (!!_fncQueue) ? _fncQueue : [];
-    this.delayCompleted = false;
-    this.real = $real;
+    this._fncQueue = (typeof _fncQueue === 'undefined') ? [] : _fncQueue;
+    this._delayCompleted = false;
+    this._$real = $real;
 
-    this.timeoutKey = window.setTimeout(function(){
-      dummy.performDummyQueueActions.call(dummy);
-    }, delay);
+    if (typeof delay === 'number' && delay > 0 && delay < Infinity) {
+      // if a number between 0 and Infinity is given, set a timeout
+      this.timeoutKey = window.setTimeout(function(){
+        dummy._performDummyQueueActions();
+      }, delay);
+    } else if ((delay !== null) && (typeof delay === 'object') && (typeof delay.promise === 'function')) {
+      // if a promise is given, use it
+      delay.then(function () {
+        dummy._performDummyQueueActions();
+      });
+    } else {
+      // otherwise, just return the actual jQuery object and nothing will happen
+      return $real;
+    }
   }
 
-  jQueryDummy.prototype.addToQueue = function(fnc, arg){
-    if (!this.delayCompleted || this.fncQueue.length > 0) {
-      this.fncQueue.unshift({ fnc: fnc, arg: arg });
-    }
-    else {
-      this.real[fnc].apply(this.real, arg);
+  // when dummy functions are called, the name of the function and arguments are
+  // put into a queue to execute later
+  jQueryDummy.prototype._addToQueue = function(fnc, arg){
+    this._fncQueue.unshift({ fnc: fnc, arg: arg });
+    // if we've already finished the wait for some reason, just call them as
+    // they get added
+    if (this._delayCompleted) {
+      return this._performDummyQueueActions();
     }
     return this;
   };
 
-  jQueryDummy.prototype.performDummyQueueActions = function(){
-    this.delayCompleted = true;
+  // when the delay is finished
+  jQueryDummy.prototype._performDummyQueueActions = function(){
+    this._delayCompleted = true;
 
     var next;
-    while (this.fncQueue.length > 0) {
-      next = this.fncQueue.pop();
-      // console.log('performing delayed function '+next.fnc+'('+next.arg+')');
+    while (this._fncQueue.length > 0) {
+      next = this._fncQueue.pop();
+
+      console.log(next);
+      // if we find another `wait` call in the queue, stop dequeing and pass the
+      // remaining queued-up function calls to that wait call
       if (next.fnc === 'wait') {
-        next.arg.push(this.fncQueue);
-        this.real[next.fnc].apply(this.real, next.arg);
-        break;
-      } else {
-        this.real[next.fnc].apply(this.real, next.arg);
+        next.arg.push(this._fncQueue);
+        return this._$real[next.fnc].apply(this._$real, next.arg);
       }
+
+      this._$real[next.fnc].apply(this._$real, next.arg);
     }
+
+    return this;
   };
 
-
+  // creates dummy object that dequeues after a times delay OR promise
   $.fn.wait = function(delay, _queue) {
     return new jQueryDummy(this, delay, _queue);
   };
 
+  //
   for (var fnc in $.fn) {
+    // skip non-function properties or properties of Object.prototype
+    if ((typeof $.fn[fnc] !== 'function') || !($.fn.hasOwnProperty(fnc))) {
+      continue;
+    }
+    // create a dummy function that queues up a call
     jQueryDummy.prototype[fnc] = (function(fnc){
-
       return function(){
         var arg = Array.prototype.slice.call(arguments);
-        return this.addToQueue(fnc, arg);
+        return this._addToQueue(fnc, arg);
       };
-
     })(fnc);
   }
 

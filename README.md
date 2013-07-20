@@ -14,8 +14,8 @@ by passing a `promise` to `.wait()`.
 The built-in `.delay()` method provided by jQuery uses the built-in queue 
 implementation.  Queues in jQuery require one of two things:
     
-    - function calls in the queue must be *manually* dequeued *or*
-    - functions in the queue must support auto-dequeuing by calling the `.dequeue()` internally
+- function calls in the queue must be *manually* dequeued *or*
+- functions in the queue must support auto-dequeuing by calling the `.dequeue()` internally
 
 This basically means that jQuery methods must opt-in to the queue.  Most common
 jQuery methods do not do this, and thus ignore the queue completely.  Here's an

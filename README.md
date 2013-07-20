@@ -1,46 +1,86 @@
-# jquery.wait
-===========
+# jQuery.wait
 
 inline window.setTimeout
 
-jquery.wait allows you to easily insert a delay into a chain of jquery
+jQuery.wait allows you to easily insert a delay into a chain of jQuery
 methods.  This allows you to use timeouts without uglifying your code and
-without having to use a custom queue.
+without having to use a custom queue. You can also now delay execution inline
+by passing a `promise` to `.wait()`.
 
-Now with support for promises! Instead of a timeout, pass a jQuery promise into
-the wait method, and the chain of methods will resume calling when that promise
-is resolved.  If the promise is rejected, the method chain will not complete.
 
-example:
 
-    // add a class to element #foo, then remove 5 seconds later
+## How is this different than `.delay()`?
 
-    // without jquery.wait
-     $('#foo').addClass('myClass');
+The built-in `.delay()` method provided by jQuery uses the built-in queue 
+implementation.  Queues in jQuery require one of two things:
+    
+    - function calls in the queue must be *manually* dequeued *or*
+    - functions in the queue must support auto-dequeuing by calling the `.dequeue()` internally
+
+This basically means that jQuery methods must opt-in to the queue.  Most common
+jQuery methods do not do this, and thus ignore the queue completely.  Here's an
+example.  Let's say we need to add a class to the body, wait 5 seconds, then 
+remove it.  Without `.wait()`, that would look like this:
+
+    $('body').addClass('foo').delay(5000).removeClass('foo');
+
+This may *look* like it would do the right thing, but what actually happens is 
+that the delay call is completely ignored.  Non-animation methods in jQuery
+don't support queueing out of the box, so they are executed immediatly.  
+jQuery.wait uses its own queueing implementation, allowing it to support *any*
+jQuery method that returns a jQuery object, including methods of other plugins.
+
+
+
+## Example 1 - Setting a Timeout Inline
+
+Here is a trivial example of how `.wait()` can be used to pause execution using
+a timeout.  I'll use the same example as above.  Here's what it looks like normally:  
+
+     $('body').addClass('foo');
+     
      window.setTimeout(function(){
-       $('#foo').removeClass('myClass');
+       $('body').removeClass('foo');
      }, 5000);
 
-    // with jquery.wait
-    $('#foo').addClass('myClass').wait(5000).removeClass('myClass');
+Not exactly elegant.  The `.wait()` method allows us to define this timeout
+**in-line** and keep things *nice and neat*.
 
-    // using a promise
+    $('body').addClass('foo').wait(5000).removeClass('foo');
+
+
+
+## Example 2 - Deferring Execution with a Promise
+    
+The `.wait()` method recently added support for creating a promise-based
+delay inline.  To use the same example as above, without `.wait()` :
+
     var deferred = $.Deferred();
-    $('#foo').addClass('myClass').wait(deferred.promise()).removeClass('myClass');
+    var promise = deferred.promise();
 
-    deferred.resolve(); // removeClass will be called
+    $('body').addClass('foo')
+    promise.then(function () {
+        $('body').removeClass('foo');
+    });
 
-jquery.wait will work with any default jquery object methods, as well as any
-methods provided by plugins loaded *before* jquery.wait.
+As with the first example, having to break up the method chain is a little ugly.
+With `.wait()`, we can keep it all in-line:
 
-## using with css transitions
+    var deferred = $.Deferred();
+    var promise = deferred.promise();
 
-if you are using jquery.wait to add/remove classes that controls
+    $('body').addClass('foo').wait(promise).removeClass('foo');
+
+
+
+## Disclaimer - Using with CSS Transistions
+
+If you are using `.wait()` to add/remove classes that controls
 css transitions, the duration of the wait needs to be slightly longer than
-the transition time. So, if in the example above the class .myClass added a
-5 second transition of some sort, i would need to make the wait time longer.
+the transition time. So, if in the example above the class `foo` added a
+5 second transition of some sort, I would need to make the wait time longer.
 I recommend 100ms longer, though your needs may vary depending on the
 complexity of the animation.
 
-If you are chaining jQuery transitions, it is better to use the default
-jquery .delay method, which has the same syntax but works with jquery queues
+If you are chaining jQuery transitions, it is better to use the built-in
+`.delay()` method, which has the same syntax but works with jQuery queues.

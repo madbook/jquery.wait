@@ -53,10 +53,10 @@
       // remaining queued-up function calls to that wait call
       if (next.fnc === 'wait') {
         next.arg.push(this._fncQueue);
-        return this._$real[next.fnc].apply(this._$real, next.arg);
+        return this._$real = this._$real[next.fnc].apply(this._$real, next.arg);
       }
 
-      this._$real[next.fnc].apply(this._$real, next.arg);
+      this._$real = this._$real[next.fnc].apply(this._$real, next.arg);
     }
 
     return this;

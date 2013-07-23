@@ -12,7 +12,7 @@
     this._delayCompleted = false;
     this._$real = $real;
 
-    if (typeof delay === 'number' && delay > 0 && delay < Infinity) {
+    if (typeof delay === 'number' && delay > -1 && delay < Infinity) {
       // if a number between 0 and Infinity is given, set a timeout
       this.timeoutKey = window.setTimeout(function(){
         dummy._performDummyQueueActions();
@@ -48,7 +48,6 @@
     while (this._fncQueue.length > 0) {
       next = this._fncQueue.pop();
 
-      console.log(next);
       // if we find another `wait` call in the queue, stop dequeing and pass the
       // remaining queued-up function calls to that wait call
       if (next.fnc === 'wait') {

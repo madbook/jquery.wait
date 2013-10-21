@@ -22,6 +22,11 @@
       delay.then(function () {
         dummy._performDummyQueueActions();
       });
+    } else if (typeof delay === 'string') {
+      // if we pass in a string, assume it is an event and bind it using `$.one`
+      $real.one(delay, function () {
+        dummy._performDummyQueueActions();
+      });
     } else {
       // otherwise, just return the actual jQuery object and nothing will happen
       return $real;

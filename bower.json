@@ -1,0 +1,24 @@
+{
+  "name": "jquery.wait",
+  "main": "jquery.wait.js",
+  "version": "1.0.0",
+  "homepage": "https://github.com/madbook/jquery.wait",
+  "authors": [
+    "Matt Lee <matt@madleedesign.com>"
+  ],
+  "description": "More versatile inline method delay",
+  "keywords": [
+    "jquery",
+    "wait",
+    "delay",
+    "async"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

@@ -72,6 +72,25 @@ With `.wait()`, we can keep it all in-line:
     $('body').addClass('foo').wait(promise).removeClass('foo');
 
 
+## Example 3 - One-time event binding
+
+You can also pass an *event name* in as a string, and the remaining commands
+will execute the next time that event occurs. Example time:
+
+**Without `wait`**
+```
+$('body').addClass('foo');
+ 
+$('body').one('click', function () {
+    $(this).removeClass('foo');
+});
+```
+
+**With `wait`**
+```
+$('body').addClass('foo').wait('click').removeClass('foo');
+```
+
 
 ## Disclaimer - Using with CSS Transistions
 
